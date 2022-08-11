@@ -1,0 +1,31 @@
+const express = require("express");
+const app = express();
+const path = require("path");
+const http = require("http");
+const server = http.createServer(app);
+const graph_generator = require("./utility/graph_generator");
+
+var bodyParser = require("body-parser");
+
+// parse application/json
+app.use(bodyParser.json());
+
+app.get("/generate/", (req, res) => {
+  var node = req.query.node || 10;
+  var isLive = req.query.isLive == "Y";
+  var isRaw = req.query.isRaw == "Y";
+
+  let response = graph_generator.generate(node, isLive, isRaw);
+  if (isLive) {
+    res.send(response);
+  } else {
+    res.json({ filename: response });
+  }
+});
+
+app.use(express.static("public"));
+app.use("/maps", express.static(path.join(__dirname, "maps")));
+
+server.listen(3000, () => {
+  console.log("listening on http://localhost:3000");
+});

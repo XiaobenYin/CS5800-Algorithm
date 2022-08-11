@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>
+    Karger minimum cut algorithm
+  </title>
+
+  <link rel="stylesheet" href="styles/style.css">
+  <script src="scripts/d3.v3.min.js"></script>
+  <script src="scripts/algorithm.js"></script>
+
+<body class="VisualizationMainPage" onload="initialize()">
+
+  <div id="container">
+    <div id="header">
+      <h1>Karger minimum cut algorithm</h1>
+    </div>
+
+    <div id="mainContent">
+
+      <div id="algoControlSection">
+        Node Num : <input type="text" id="numNodes" value="20" size="2">
+        Speed : <input type="range" min="10" max="1000" value="500" class="slider" id="speed">
+        <input type="button" value="New" onclick="newGraph()">
+        <input type="button" value="Run" id="run" onclick="run()">
+        <input type="button" value="Backward" onclick="backward()">
+        <input type="button" value="Forward" onclick="forward()">
+      </div>
+
+      <div id="canvas"></div>
+      <div id="footer">
+        <p>CS5800 - Final Project : Forest, Norman and Teresa @ Vancouver Campus</p>
+      </div>
+
+      <div id="info">
+        <table>
+          <tr>
+            <td>Cut # </td>
+            <td id="cutCount"></td>
+            <td>Contract # </td>
+            <td id="contractCount"></td>
+          </tr>
+          <tr>
+            <td>Edge #</td>
+            <td id="edgesCount"></td>
+            <td>Remove Self #</td>
+            <td id="removeSelfCount"></td>
+          </tr>
+          <tr>
+            <td>Status :</td>
+            <td id="status"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script>
+
+  let stack = [];
+  let isAuto = false;
+  let cutCount = 0, contractCount = 0, removeSelfCount = 0;
+  let isComplete = false;
+  const width = 960, height = 720;
+  const fill = d3.scale.category20();
+  var nodes = [];
+  var edges = [];
+
+  var force = d3.layout.force()
+    .size([width, height])
+    .nodes(nodes)
+    .links(edges)
+    .linkDistance(300)
+    .charge(-180)
+    .on("tick", tick);
+
+  var svg = d3.select("#canvas").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+
+  var node = svg.selectAll(".node");
+  var link = svg.selectAll(".link");
+
+  function updateGraph() {
+    link = link.data(edges);
+    link.enter()
+      .insert("line", ".node")
+      .attr("class", "link");
+    link.exit()
+      .remove();
+
+    node = node.data(force.nodes(), function (d) { return d.id; });
+    node.enter()
+      .append("circle")
+      .attr("class", function (d) { return "node " + d.id; })
+      .attr("r", 8)
+      .call(force.drag);
+    node.exit().remove();
+
+    force.start();
+  }
+
+  function tick() {
+    link.attr("x1", function (d) { return d.source.x; })
+      .attr("y1", function (d) { return d.source.y; })
+      .attr("x2", function (d) { return d.target.x; })
+      .attr("y2", function (d) { return d.target.y; });
+
+    node.attr("cx", function (d) { return d.x; })
+      .attr("cy", function (d) { return d.y; })
+      .style("fill", function (d) { return fill(d.weight); });
+  }
+
+  /**
+   * Initialize the Graph
+   */
+  function initializeGraph(filename) {
+    console.info(`Download filename ${filename}`);
+    
+    // Reset the original graph
+    edges.length = 0;
+    nodes.length = 0;
+    stack.length = 0;
+    removeSelfCount = 0;
+    contractCount = 0;
+    cutCount = 0;
+    isAuto = false;
+    isComplete = false;
+
+    d3.json(filename, function (error, data) {
+
+      for (var a = 0; a < data.length; a++) {
+        nodes.push({ id: data[a][0] });
+        for (var b = 1; b < data[a].length; b++) {
+          if (+data[a][b] - 1 > +data[a][0] - 1) { // Ensures that we only add each edge one time
+            edges.push({ source: +data[a][0] - 1, target: +data[a][b] - 1 });
+          }
+        }
+      }
+
+      updateGraph();
+    })
+  }
+
+  // Kager Algorithm Start here
+  function myTick() {
+
+    saveStack();
+
+    // Randomly choose an edge
+    var edge_index = Math.floor(Math.random() * edges.length);
+    var edge = edges[edge_index];
+
+    // Mash nodes together, all edges connected to second node are now connected to first
+    var node_index = edge.target.index;
+    contractCount += contractNode(edges, edge.target, edge.source)
+    removeSelfCount += removeSelfLoops(edges);
+    nodes.splice(node_index, 1);
+
+    updateGraph();
+
+    cutCount++;
+    // Terminte the case if there are only two nodes left
+    if (nodes.length <= 2) {
+      isComplete = true;
+      return;
+    }
+
+    // Support Auto Run
+    if (isAuto) {
+      let timeout = 1010 - document.getElementById("speed").value;
+      console.log(`Next iteration in ${timeout}ms`);
+      setTimeout(myTick, timeout);
+    }
+  }
+
+  function saveStack() {
+    let current = {
+      nodes: nodes.slice(),
+      edges: edges.map(x => { return { source: x.source, target: x.target } }), 
+      contractCount,
+      removeSelfCount,
+    };
+    stack.push(current);
+  }
+
+  function initialize() {
+    newGraph();
+    setInterval(showStatus, 100);
+  }
+
+  function showStatus() {
+    let edgesCount = edges.length;
+    let totalCount = (stack.length != 0) ? stack[0].edges.length : edgesCount;
+
+    console.log({edgesCount, cutCount, isAuto, isComplete})
+    document.getElementById("cutCount").innerHTML = cutCount;
+    document.getElementById("contractCount").innerHTML = contractCount;
+    document.getElementById("removeSelfCount").innerHTML = removeSelfCount;
+    document.getElementById("edgesCount").innerHTML = edgesCount + "/" + totalCount;
+
+    document.getElementById("status").innerHTML = isComplete ? "Complete" : (isAuto ? "Running" : "Waiting for input");
+  }
+
+  /**
+   * New Graph
+   */
+  let newGraph = async () => {
+
+    let numNodes = document.getElementById("numNodes").value;
+    const response = await fetch(`/generate/?isLive=N&isRaw=N&node=${numNodes}`);
+    const json = await response.json();
+    initializeGraph(json.filename);
+  }
+
+  /**
+   * Run Algorithm Automatically
+   */
+  let run = () => {
+    isAuto = !isAuto;
+    if (isAuto) {
+      document.getElementById("run").value = "Pause";
+      myTick();
+    } else {
+      document.getElementById("run").value = "Run";
+    }
+  }
+
+  /**
+   * One Step forward manuall
+   */
+  let forward = () => {
+
+    if (nodes.length == 2){
+      alert("No more nodes can be cut");
+      return;
+    }
+    isAuto = false;
+    myTick();
+  }
+
+  /**
+   * Step Backward
+   */
+  let backward = () => {
+    isAuto = false;
+
+    if (stack.length == 0) {
+      alert("There is no previous graph to go back to");
+      return;
+    }
+
+    let previous = stack.pop();
+    // Restore the Nodes / Element, cannot directly use the previous.nodes / previous.links
+    nodes.length = 0;
+    edges.length = 0;
+    for (var i = 0; i < previous.nodes.length; i++) {
+      nodes.push(previous.nodes[i]);
+    }
+    for (var i = 0; i < previous.edges.length; i++) {
+      edges.push(previous.edges[i]);
+    }
+    contractCount = previous.contractCount;
+    removeSelfCount = previous.removeSelfCount;
+
+    cutCount--;
+    isComplete = false;
+
+    // Update the graph
+    updateGraph();
+  }
+
+</script>
