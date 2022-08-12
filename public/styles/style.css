@@ -18,6 +18,18 @@ rect {
 }
 
 
+.column {
+	float: left;
+	width: 18%;
+  }
+  
+  /* Clear floats after the columns */
+  .row:after {
+	content: "";
+	display: table;
+	clear: both;
+  }
+
 @charset "utf-8";
 
 
@@ -105,8 +117,6 @@ body {
 }
 
 
-	
-
 .VisualizationMainPage #mainContent h1{
 	padding: 0 20px; 
 	background: #FFFFFF;
@@ -124,8 +134,6 @@ body {
 	background: #FFFFFF;
 	color:#006633
 }
-
-
 
 .VisualizationMainPage #footer { 
 	padding: 0 10px;
