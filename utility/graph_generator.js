@@ -3,7 +3,7 @@
 // See http://stackoverflow.com/questions/2041517/random-simple-connected-graph-generation-with-given-sparseness
 var fs = require('fs');
 var moment = require('moment');
-const MAP_FOLDER = "/maps";
+const MAP_FOLDER = "maps";
 const DENSITY = 0.2
 
 let generate = (num_nodes, isLive, isRaw) => {
@@ -98,7 +98,18 @@ let generate = (num_nodes, isLive, isRaw) => {
  
     let timestamp  = moment().format("YYYYMMDD_hhmmss");
     let filename = `${MAP_FOLDER}/${timestamp}_${num_nodes}_${DENSITY}_${num_edges}.json`;
-    fs.writeFileSync(`./${filename}`, response);
+
+
+    try {
+        if (!fs.existsSync(MAP_FOLDER)) {
+          fs.mkdirSync(MAP_FOLDER);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      
+
+    fs.writeFileSync(`${filename}`, response);
 
     return filename;
 }
