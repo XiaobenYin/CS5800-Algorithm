@@ -19,12 +19,13 @@
     <div id="mainContent">
 
       <div id="algoControlSection">
-        Node Num : <input type="text" id="numNodes" value="10" size="2">
-        Speed : <input type="range" min="10" max="1000" value="500" class="slider" id="speed">
+        Node  : <input type="text" id="numNodes" value="10" size="3">
+        Speed : <input type="range" min="0" max="990" value="500" class="slider" id="speed">
         <input type="button" value="New" onclick="newGraph()">
         <input type="button" value="Run" id="run" onclick="run()">
         <input type="button" value="Backward" onclick="backward()">
         <input type="button" value="Forward" onclick="forward()">
+        <input type="button" value="Reload" onclick="reload()">
       </div>
 
 
@@ -36,36 +37,32 @@
         <div class="column" id="canvas5"></div>
       </div>
 
-      <div id="footer">
-        <p>CS5800 - Final Project : Forest, Peter, Norman and Teresa @ Vancouver Campus</p>
-      </div>
-
       <div id="info">
         <table>
           <tr>
-            <td>Cut # </td>
-            <td id="cutCount"></td>
-            <td>Contract # </td>
-            <td id="contractCount"></td>
-          </tr>
-          <tr>
-            <td>Edge #</td>
-            <td id="edgesCount"></td>
-            <td>Remove Self #</td>
-            <td id="removeSelfCount"></td>
-          </tr>
-          <tr>
-            <td>Status :</td>
-            <td id="status"></td>
+            <td><textarea id="canvas1s" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas2s" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas3s" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas4s" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas5s" cols="40" rows="10"></textarea></td>
           </tr>
         </table>
       </div>
+
+      <footer>
+        <div id="footer">
+          <p>CS5800 - Final Project : Forest, Peter, Norman and Teresa @ Vancouver Campus</p>
+          <p>Disclaimer : Due to unforeseenable "feature", the backward button may not work</p>
+        </div>
+      </footer>
     </div>
   </div>
 </body>
 
 <script>
-
+  const CANVAS_LIMIT = 5;
+  const MAXIMUM_TIME = 1000;
+  const DEBUG = false;
 
   class KagerCanvas {
     constructor(id, height, width) {
@@ -78,11 +75,12 @@
       this.contractCount = 0;
       this.removeSelfCount = 0;
       this.isComplete = false;
+      this.timeout = true;
 
       this.nodes = [];
       this.edges = [];
 
-      this.fill = d3.scale.category20c();
+      this.fill = d3.scale.category10();
       this.force = d3.layout.force()
         .size([this.width, this.height])
         .nodes(this.nodes)
@@ -101,40 +99,35 @@
     }
 
     updateGraph() {
+
+      // Update Link Value
       this.link = this.link.data(this.edges);
       this.link.enter()
         .insert("line", ".node")
         .attr("class", "link");
-      this.link.exit()
-        .remove();
+      this.link.exit().remove();
 
+      // Update Node Value and Position
       this.node = this.node.data(this.force.nodes(), function (d) { return d.id; });
-      // this.node.enter()
-      //   .append("circle")
-      //   .attr("class", function (d) { return "node " + d.id; })
-      //   .attr("r", 8)
-      //   .call(this.force.drag);
 
       this.node.enter()
-        // .append("circle")
-        // .attr("class", function (d) { return "node " + d.id; })
-        // .attr("r", 8)
-        // .call(this.force.drag)
         .append("text")
-        .text(function (d) {
-                    return d.id
-                })
         .attr('x', function (d) {
-            return d.x
+          return d.x
         })
         .attr('y', function (d) {
-            return d.y
+          return d.y
         })
-        .attr('dy', function (d) {
-            return 5
-        })
-        .call(this.force.drag);
+        .attr('class', function (d) { return "a" + d.id })
+
       this.node.exit().remove();
+
+      // Reset Vertex Name
+      for (let i = 0; i < this.nodes.length; i++) {
+        let id = this.nodes[i].id;
+        let newLabel = this.nodes[i].labels.join(",");
+        d3.select(this.id).select(`text.a${id}`).text(newLabel)
+      }
 
       this.force.start();
     }
@@ -159,95 +152,83 @@
       console.info(`Download filename ${filename}`);
 
       // Reset the original graph
-      this.edges.length = 0;
-      this.nodes.length = 0;
-      this.stack.length = 0;
-      this.removeSelfCount = 0;
-      this.contractCount = 0;
-      this.cutCount = 0;
-      this.isAuto = false;
-      this.isComplete = false;
-
-      let _self = this;
-      d3.json(filename, function (error, data) {
-
-        for (var a = 0; a < data.length; a++) {
-          _self.nodes.push({ id: data[a][0] });
-          for (var b = 1; b < data[a].length; b++) {
-            if (+data[a][b] - 1 > +data[a][0] - 1) { // Ensures that we only add each edge one time
-              _self.edges.push({ source: +data[a][0] - 1, target: +data[a][b] - 1 });
-            }
-          }
-        }
-
-        _self.updateGraph();
-      })
+      this.filename = filename
+      this.reload();
     }
 
     // Kager Algorithm Start here
     forward() {
 
       if (this.nodes.length == 2) {
-        // alert("No more nodes can be cut");
+        console.log(`Canvas ${this.id} : No more nodes can be cut`);
         return;
       }
-      // setAuto(false);
-
+      
       this.saveStack();
 
       // Perform Kager Algorithm
       this.performKager();
 
+      // Update the Graph
       this.updateGraph();
 
+      // Updte Statistic
       this.cutCount++;
+
       // Terminte the case if there are only two nodes left
       if (this.nodes.length <= 2) {
         this.isComplete = true;
         return;
       }
 
-      // Support Auto Run
+      // Perform Auto Run if the user has selected the auto run option
       if (this.isAuto) {
-        let timeout = 1010 - document.getElementById("speed").value;
+        let timeout = MAXIMUM_TIME - document.getElementById("speed").value;
         console.log(`Next iteration in ${timeout}ms`);
-        setTimeout(this.forward.bind(this), timeout);
+        this.timeout = setTimeout(this.forward.bind(this), timeout);
       }
     }
 
 
     saveStack() {
-      let current = {
-        nodes: this.nodes.slice(),
-        edges: this.edges.map(x => { return { source: x.source, target: x.target } }),
-        contractCount,
-        removeSelfCount,
-      };
-      this.stack.push(current);
+      console.log(`Save Stack`)
+
+      let instance = this.getGraphStatus();
+
+      this.stack.push(JSON.stringify(instance));
     }
 
     backward() {
 
       if (this.stack.length == 0) {
-        // alert("There is no previous graph to go back to");
+        console.log(`Canvas ${this.id} : There is no previous graph to go back`);
         return;
       }
 
-      let previous = this.stack.pop();
-      // Restore the Nodes / Element, cannot directly use the previous.nodes / previous.links
+      // Restore from Stack
+      let instance = JSON.parse(this.stack.pop());
+
+      // Restore Statistic Information
+      this.isComplete = false;
+      this.cutCount--;
+      this.contractCount = instance.contractCount;
+      this.removeSelfCount = instance.removeSelfCount;
+      this.edgeCount = instance.edgeCount;
+      this.nodeCount = instance.nodeCount;
+
+      // // Restore the Nodes / Element, cannot directly use the previous.nodes / previous.links
       this.nodes.length = 0;
       this.edges.length = 0;
-      for (var i = 0; i < previous.nodes.length; i++) {
-        this.nodes.push(previous.nodes[i]);
-      }
-      for (var i = 0; i < previous.edges.length; i++) {
-        this.edges.push(previous.edges[i]);
-      }
-      this.contractCount = previous.contractCount;
-      this.removeSelfCount = previous.removeSelfCount;
 
-      this.cutCount--;
-      this.isComplete = false;
+      let data = instance.graph;
+      for (var a = 0; a < data.length; a++) {
+        this.nodes.push({ id: a + 1, labels: data[a][0] });
+        for (var b = 1; b < data[a].length; b++) {
+          if (+data[a][b] - 1 > a) { // Ensures that we only add each edge one time
+            this.edges.push({ source: a, target: +data[a][b] - 1 });
+          }
+        }
+      }
 
       // Update the graph
       this.updateGraph();
@@ -258,6 +239,85 @@
       if (isAuto) {
         this.forward();
       }
+      else{
+        clearTimeout(this.timeout);
+      }
+    }
+
+    getGraphStatus() {
+
+      // Convert to adjacency list
+      let graph = [];
+      for (let i = 0; i < this.nodes.length; i++) {
+        let id = this.nodes[i].id;
+        let labels = this.nodes[i].labels
+        let edges = this.edges.filter(x => x.source.id == id).map(x => x.target.id);
+        edges = edges.concat(this.edges.filter(x => x.target.id == id).map(x => x.source.id));
+        graph.push([labels].concat(edges));
+      }
+
+      // Flatten the graph
+      this.flattenGraph(graph);
+
+      // Return the Graph with Statistic
+      let instance = { graph, contractCount: this.contractCount, removeSelfCount: this.removeSelfCount, edgeCount : this.edges.length, nodeCount : this.nodes.length };
+      return instance;
+    }
+
+    flattenGraph(graph) {
+      console.log(`Before : ${JSON.stringify(graph)}`);
+      let nodeHash = [];
+      for (let i = 0; i < graph.length; i++) {
+        let labels = graph[i][0];
+        for (let j = 0; j < labels.length; j++) {
+          nodeHash[labels[j]] = i + 1;
+        }
+      }
+
+      for (let i = 0; i < graph.length; i++) {
+        let tmp = graph[i];
+        for (let j = 1; j < tmp.length; j++) {
+          let index = nodeHash[tmp[j]];
+          tmp[j] = index;
+        }
+      }
+
+      for (let i = 0; i < graph.length; i++) {
+        let tmp = graph[i];
+        let head = tmp.shift();
+        let tail = tmp.getUnique().sort(intSorter);
+        graph[i] = [head].concat(tail)
+      }
+
+      console.log(`After  : ${JSON.stringify(graph)}`);
+    }
+
+    reload() {
+      this.edges.length = 0;
+      this.nodes.length = 0;
+      this.stack.length = 0;
+      this.removeSelfCount = 0;
+      this.contractCount = 0;
+      this.cutCount = 0;
+      this.isAuto = false;
+      this.isComplete = false;
+
+      let _self = this;
+      d3.json(this.filename, function (error, data) {
+
+        // console.log(data)
+        for (var a = 0; a < data.length; a++) {
+          _self.nodes.push({ id: a + 1, labels: data[a][0] });
+          for (var b = 1; b < data[a].length; b++) {
+            if (+data[a][b] - 1 > a) { // Ensures that we only add each edge one time
+              _self.edges.push({ source: a, target: +data[a][b] - 1 });
+            }
+          }
+        }
+
+        // Update the Graph
+        _self.updateGraph();
+      })
     }
 
     /**
@@ -265,38 +325,43 @@
      */
     performKager() {
       // Randomly choose an edge
-      var edge_index = Math.floor(Math.random() * this.edges.length);
+      var edge_index = Math.floor(this.random() * this.edges.length);
       var edge = this.edges[edge_index];
 
       // Mash nodes together, all edges connected to second node are now connected to first
-      var node_index = edge.target.index;
+      var source_index = edge.source.index;
+      var target_index = edge.target.index;
+      console.log(`Contracting Node ${this.nodes[target_index].labels} into ${this.nodes[source_index].labels}`);
 
       this.contractNode(edge.target, edge.source)
       this.removeSelfLoops();
-      this.nodes.splice(node_index, 1);
+
+      // Merge Node
+      this.nodes[source_index].labels = this.nodes[source_index].labels.concat(this.nodes[target_index].labels);
+      let newLabel = this.nodes[source_index].labels.sort(intSorter).join(",");
+      this.nodes.splice(target_index, 1);
     }
 
     /**
-     * Contract Nodes
+     * Contract Nodes (Target-->Source)
      */
-    contractNode(object, replacement) {
+    contractNode(target, source) {
 
-      console.log(`Contracting Edge between : ${object.id} with ${replacement.id}`);
       for (var i = 0; i < this.edges.length; i++) {
-        if (this.edges[i].source.index == object.index) {
-          this.edges[i].source = replacement;
+        if (this.edges[i].source.index == target.index) {
+          this.edges[i].source = source;
           this.contractCount++
-        } else if (this.edges[i].target.index == object.index) {
-          this.edges[i].target = replacement;
+        } else if (this.edges[i].target.index == target.index) {
+          this.edges[i].target = source;
           this.contractCount++
         }
 
-        // if (this.edges[i].target.index > this.edges[i].source.index) {
-        //   var temp = this.edges[i].source;
-        //   this.edges[i].source = this.edges[i].target;
-        //   this.edges[i].target = temp;
-        //   this.contractCount++
-        // }
+        // Swap the edge number if the edge is reversed
+        if (this.edges[i].target.index > this.edges[i].source.index) {
+          var temp = this.edges[i].source;
+          this.edges[i].source = this.edges[i].target;
+          this.edges[i].target = temp;
+        }
       }
     }
 
@@ -307,36 +372,62 @@
       for (var i = this.edges.length - 1; i >= 0; i--) {
         if (this.edges[i].source.index == this.edges[i].target.index) {
           this.edges.splice(i, 1);
-          this.removeCount++
+          this.removeSelfCount++
         }
       }
     }
+
+    showStatistic () {
+      let textarea = document.querySelector(`${this.id}s`);
+      let isAuto = this.isAuto;
+      let isComplete = this.isComplete;
+      let edgeCount = this.edges.length;
+      let cutCount = this.cutCount;
+      let nodeCount = this.nodes.length;
+      let totalEdge = (this.stack.length != 0) ? JSON.parse(this.stack[0]).edgeCount : edgeCount;
+      let totalNode = (this.stack.length != 0) ? JSON.parse(this.stack[0]).nodeCount : nodeCount;
+      let removeSelfCount = this.removeSelfCount;
+      let contractCount = this.contractCount;
+
+      console.log({edgeCount, cutCount, isAuto, isComplete})
+
+      let buffer = `
+        Edge Count : ${edgeCount} / ${totalEdge}
+        Node Count : ${nodeCount} / ${totalNode}
+        Cut Count : ${cutCount}
+        Remove Self Edge : ${removeSelfCount}
+        Edge Modified : ${contractCount}
+        Is Auto : ${isAuto}
+        Is Complete : ${isComplete}
+      `;
+
+      textarea.innerHTML = buffer;
+
+    }
+
+    random() {
+      if (DEBUG) return 0.5;
+      else return Math.random()
+    }
+
   }
 
-
   async function initialize() {
-
     const width = 600, height = 600;
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= CANVAS_LIMIT; i++) {
       canvasList.push(new KagerCanvas(`#canvas${i}`, height, width));
     }
 
     newGraph();
-    // setInterval(showStatus, 100);
+
+    setInterval(showStatistic, 100);
   }
 
-  // function showStatus() {
-  //   let edgesCount = edges.length;
-  //   let totalCount = (stack.length != 0) ? stack[0].edges.length : edgesCount;
-
-  //   console.log({edgesCount, cutCount, isAuto, isComplete})
-  //   document.getElementById("cutCount").innerHTML = cutCount;
-  //   document.getElementById("contractCount").innerHTML = contractCount;
-  //   document.getElementById("removeSelfCount").innerHTML = removeSelfCount;
-  //   document.getElementById("edgesCount").innerHTML = edgesCount + "/" + totalCount;
-
-  //   document.getElementById("status").innerHTML = isComplete ? "Complete" : (isAuto ? "Running" : "Waiting for input");
-  // }
+  function showStatistic() {
+    for (let i = 0; i < CANVAS_LIMIT; i++) {
+      canvasList[i].showStatistic();
+    }
+  }
 
   let canvasList = [];
   /**
@@ -344,13 +435,19 @@
    */
   let newGraph = async () => {
 
+    setIsAuto(false);
 
     let numNodes = document.getElementById("numNodes").value;
     const response = await fetch(`/generate/?isLive=N&isRaw=N&node=${numNodes}`);
     const json = await response.json();
+    let filename = json.filename;
+
+    if (DEBUG) {
+      filename = "/maps/testing.json"
+    }
 
     for (let i = 0; i < canvasList.length; i++) {
-      canvasList[i].initializeGraph(json.filename);
+      canvasList[i].initializeGraph(filename);
     }
   }
 
@@ -394,5 +491,34 @@
       canvasList[i].backward();
     }
   }
+
+  /**
+   * Reload Graph
+   */
+  let reload = () => {
+    for (let i = 0; i < canvasList.length; i++) {
+      canvasList[i].reload();
+    }
+  }
+
+  let debugStack = () => {
+    for (let i = 0; i < canvasList[0].stack.length; i++) {
+      debug(canvasList[0].stack[i]);
+    }
+  }
+
+  let debug = (object) => {
+    console.table(object.nodes);
+    console.table(object.edges);
+  }
+
+  Array.prototype.getUnique = function () {
+    var o = {}, a = [], i, e;
+    for (i = 0; e = this[i]; i++) { o[e] = 1 };
+    for (e in o) { a.push(e) };
+    return a;
+  }
+
+  let intSorter = (a, b) => parseInt(a) - parseInt(b);
 
 </script>
