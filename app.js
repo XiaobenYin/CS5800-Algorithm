@@ -1,4 +1,5 @@
 const express = require("express");
+const port = process.env.PORT || 8080;
 const app = express();
 const path = require("path");
 const http = require("http");
@@ -27,6 +28,6 @@ app.get("/generate/", (req, res) => {
 app.use(express.static("public"));
 app.use("/maps", express.static(path.join(__dirname, "maps")));
 
-server.listen(3000, () => {
-  console.log("listening on http://localhost:3000");
+server.listen(port, () => {
+  console.log(`listening on http://localhost:${port}`);
 });
