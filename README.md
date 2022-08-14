@@ -2,6 +2,8 @@
 
 ![Main Screen](docs/screen.png)
 
+[Live Demo on Heroku](https://karger.herokuapp.com/)
+
 # Installation
 1) Development version:
 
@@ -16,5 +18,5 @@ npm start
 docker build . -t karger
 
 # Run Docker [Clean up after terminated]
-docker run --rm -p 3000:3000 --name karger karger
+docker run --rm -p 8080:8080 --name karger karger
 ```
