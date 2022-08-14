@@ -19,7 +19,7 @@
     <div id="mainContent">
 
       <div id="algoControlSection">
-        Node  : <input type="text" id="numNodes" value="10" size="3">
+        Node : <input type="text" id="numNodes" value="10" size="3">
         Speed : <input type="range" min="0" max="990" value="500" class="slider" id="speed">
         <input type="button" value="New" onclick="newGraph()">
         <input type="button" value="Run" id="run" onclick="run()">
@@ -46,27 +46,42 @@
             <td><textarea id="canvas4s" cols="40" rows="10"></textarea></td>
             <td><textarea id="canvas5s" cols="40" rows="10"></textarea></td>
           </tr>
+          <tr>
+            <td><textarea id="canvas1g" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas2g" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas3g" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas4g" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas5g" cols="40" rows="10"></textarea></td>
+          </tr>
         </table>
       </div>
 
-      <footer>
-        <div id="footer">
-          <p>CS5800 - Final Project : Forest, Peter, Norman and Teresa @ Vancouver Campus with <svg viewBox="0 0 1792 1792" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="height: 0.8rem;"><path d="M896 1664q-26 0-44-18l-624-602q-10-8-27.5-26T145 952.5 77 855 23.5 734 0 596q0-220 127-344t351-124q62 0 126.5 21.5t120 58T820 276t76 68q36-36 76-68t95.5-68.5 120-58T1314 128q224 0 351 124t127 344q0 221-229 450l-623 600q-18 18-44 18z" fill="#e25555"></path></svg>
-          </p>
-          <p>Disclaimer : Due to unforeseenable "feature", the backward button may not work</p>
-        </div>
-      </footer>
-    </div>
   </div>
+  <footer>
+    <div id="footer">
+      <p>CS5800 - Final Project : Forest, Peter, Norman and Teresa @ Vancouver Campus with <svg
+          viewBox="0 0 1792 1792" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"
+          style="height: 0.8rem;">
+          <path
+            d="M896 1664q-26 0-44-18l-624-602q-10-8-27.5-26T145 952.5 77 855 23.5 734 0 596q0-220 127-344t351-124q62 0 126.5 21.5t120 58T820 276t76 68q36-36 76-68t95.5-68.5 120-58T1314 128q224 0 351 124t127 344q0 221-229 450l-623 600q-18 18-44 18z"
+            fill="#e25555"></path>
+        </svg>
+      </p>
+      <p>Disclaimer : Due to unforeseenable "feature", the backward button may not work</p>
+    </div>
+  </footer>
+</div>
 </body>
 
 <script>
+  const width = 600, height = 400;
   const CANVAS_LIMIT = 5;
   const MAXIMUM_TIME = 1000;
   const DEBUG = false;
   const DEBUG_FILE = "/maps/testing.json";
+  let canvasList = [];
 
-  class KagerCanvas {
+  class KargerCanvas {
     constructor(id, height, width) {
       this.id = id;
       this.height = height;
@@ -158,18 +173,18 @@
       this.reload();
     }
 
-    // Kager Algorithm Start here
+    // Karger Algorithm Start here
     forward() {
 
       if (this.nodes.length == 2) {
         console.log(`Canvas ${this.id} : No more nodes can be cut`);
         return;
       }
-      
+
       this.saveStack();
 
-      // Perform Kager Algorithm
-      this.performKager();
+      // Perform Karger Algorithm
+      this.performKarger();
 
       // Update the Graph
       this.updateGraph();
@@ -241,7 +256,7 @@
       if (isAuto) {
         this.forward();
       }
-      else{
+      else {
         clearTimeout(this.timeout);
       }
     }
@@ -262,7 +277,7 @@
       this.flattenGraph(graph);
 
       // Return the Graph with Statistic
-      let instance = { graph, contractCount: this.contractCount, removeSelfCount: this.removeSelfCount, edgeCount : this.edges.length, nodeCount : this.nodes.length };
+      let instance = { graph, contractCount: this.contractCount, removeSelfCount: this.removeSelfCount, edgeCount: this.edges.length, nodeCount: this.nodes.length };
       return instance;
     }
 
@@ -323,9 +338,9 @@
     }
 
     /**
-     * Kager Algorithm
+     * Karger Algorithm
      */
-    performKager() {
+    performKarger() {
       // Randomly choose an edge
       var edge_index = Math.floor(this.random() * this.edges.length);
       var edge = this.edges[edge_index];
@@ -379,8 +394,11 @@
       }
     }
 
-    showStatistic () {
-      let textarea = document.querySelector(`${this.id}s`);
+    /**
+     * Show Statistic
+     */
+    showStatistic() {
+      let textarea1 = document.querySelector(`${this.id}s`);
       let isAuto = this.isAuto;
       let isComplete = this.isComplete;
       let edgeCount = this.edges.length;
@@ -391,7 +409,6 @@
       let removeSelfCount = this.removeSelfCount;
       let contractCount = this.contractCount;
 
-      console.log({edgeCount, cutCount, isAuto, isComplete})
 
       let buffer = `
         Edge Count : ${edgeCount} / ${totalEdge}
@@ -403,8 +420,29 @@
         Is Complete : ${isComplete}
       `;
 
-      textarea.innerHTML = buffer;
+      let graphBuffer = '';
+      let textarea2 = document.querySelector(`${this.id}g`);
 
+      // Convert to adjacency list
+      let graph = [];
+      for (let i = 0; i < this.nodes.length; i++) {
+        let id = this.nodes[i].id;
+        let labels = this.nodes[i].labels
+        let edges = this.edges.filter(x => x.source.id == id).map(x => x.target.id);
+        edges = edges.concat(this.edges.filter(x => x.target.id == id).map(x => x.source.id));
+        graph.push([labels].concat(edges.sort(intSorter)));
+      }
+
+      for (let i=0; i < graph.length; i++){
+        let tmp = graph[i];
+        let head = tmp.shift();
+        let edges = tmp;
+
+        graphBuffer += `${head} : ${edges.join(",")}\n`;
+      }
+
+      textarea1.innerHTML = buffer;
+      textarea2.innerHTML = graphBuffer
     }
 
     random() {
@@ -415,13 +453,11 @@
   }
 
   async function initialize() {
-    const width = 600, height = 600;
     for (let i = 1; i <= CANVAS_LIMIT; i++) {
-      canvasList.push(new KagerCanvas(`#canvas${i}`, height, width));
+      canvasList.push(new KargerCanvas(`#canvas${i}`, height, width));
     }
 
     newGraph();
-
     setInterval(showStatistic, 100);
   }
 
@@ -431,7 +467,6 @@
     }
   }
 
-  let canvasList = [];
   /**
    * New Graph
    */
@@ -442,7 +477,7 @@
     let numNodes = document.getElementById("numNodes").value;
     const response = await fetch(`/generate/?isLive=N&isRaw=N&node=${numNodes}`);
     const json = await response.json();
-    const filename = (DEBUG)  ? json.filename : DEBUG_FILE;
+    const filename = (DEBUG) ? DEBUG_FILE : json.filename;
 
     for (let i = 0; i < canvasList.length; i++) {
       canvasList[i].initializeGraph(filename);
@@ -471,7 +506,7 @@
   }
 
   /**
-   * One Step forward manual
+   * One Step forward manually
    */
   let forward = () => {
     setIsAuto(false);
@@ -499,17 +534,23 @@
     }
   }
 
+  /**
+   * Debug Utility
+   */
+  let debug = (object) => {
+    console.table(object.nodes);
+    console.table(object.edges);
+  }
   let debugStack = () => {
     for (let i = 0; i < canvasList[0].stack.length; i++) {
       debug(canvasList[0].stack[i]);
     }
   }
 
-  let debug = (object) => {
-    console.table(object.nodes);
-    console.table(object.edges);
-  }
 
+  /**
+   * Add Array Get Unique Value
+   */
   Array.prototype.getUnique = function () {
     var o = {}, a = [], i, e;
     for (i = 0; e = this[i]; i++) { o[e] = 1 };
@@ -517,6 +558,9 @@
     return a;
   }
 
+  /**
+   * Add Sorter Utility
+   */
   let intSorter = (a, b) => parseInt(a) - parseInt(b);
 
 </script>
