@@ -1,34 +1,33 @@
-var fs = require('fs');
-var moment = require('moment');
+const fs = require('fs');
+const moment = require('moment');
 const MAP_FOLDER = "maps";
-const DENSITY = 0.2
 
 /**
  * Generate the Map Randomly
  */
-let generate = (num_nodes, isLive, isRaw) => {
-    var low_bound = num_nodes - 1;
-    var high_bound = num_nodes * (num_nodes - 1) / 2;
-    var num_edges = low_bound + Math.floor(DENSITY * (high_bound - low_bound));
+let generate = (num_nodes, density, isLive, isRaw) => {
+    let DENSITY = parseFloat(density) / 100;
+    console.log(DENSITY)
+    let low_bound = num_nodes - 1;
+    let high_bound = num_nodes * (num_nodes - 1) / 2;
+    let num_edges = low_bound + Math.floor(DENSITY * (high_bound - low_bound));
 
-    var nodes = [];
-    for (var i = 0; i < num_nodes; i++) {
-        nodes.push({
-        	id: i,
-        });
+    let nodes = [];
+    for (let i = 0; i < num_nodes; i++) {
+        nodes.push({id: i,});
     }
-    var edges = [];
 
-    var S = nodes.slice(0);
-    var T = [];
+    let S = nodes.slice(0);
+    let T = [];
 
-    var current = S[Math.floor(Math.random() * S.length)];
+    let current = S[Math.floor(Math.random() * S.length)];
     T.push(current);
     S.splice(S.indexOf(current),1);
 
-    var i = 0;
+    let i = 0;
+    let edges = [];
     while (S.length > 0) {
-        var neighbor = S[Math.floor(Math.random() * S.length)];
+        let neighbor = S[Math.floor(Math.random() * S.length)];
         edges.push({
             source: nodes.indexOf(current),
             target: nodes.indexOf(neighbor)
@@ -40,8 +39,8 @@ let generate = (num_nodes, isLive, isRaw) => {
     }
 
     while (edges.length < num_edges) {
-        var node1 = nodes[Math.floor(Math.random() * nodes.length)];
-        var node2 = nodes[Math.floor(Math.random() * nodes.length)];
+        let node1 = nodes[Math.floor(Math.random() * nodes.length)];
+        let node2 = nodes[Math.floor(Math.random() * nodes.length)];
 
         if (node1 !== node2) {
             edges.push({
@@ -81,7 +80,7 @@ let generate = (num_nodes, isLive, isRaw) => {
     }
  
     let timestamp  = moment().format("YYYYMMDD_hhmmss");
-    let filename = `${MAP_FOLDER}/${timestamp}_${num_nodes}_${DENSITY}_${num_edges}.json`;
+    let filename = `${MAP_FOLDER}/${timestamp}_${num_nodes}_${density}_${num_edges}.json`;
 
     try {
         if (!fs.existsSync(MAP_FOLDER)) {

@@ -12,10 +12,11 @@ app.use(bodyParser.json());
 
 app.get("/generate/", (req, res) => {
   var node = req.query.node || 10;
+  var density = req.query.density || 0.2;
   var isLive = req.query.isLive == "Y";
   var isRaw = req.query.isRaw == "Y";
 
-  let response = graph_generator.generate(node, isLive, isRaw);
+  let response = graph_generator.generate(node, density, isLive, isRaw);
   if (isLive) {
     res.send(response);
   } else {

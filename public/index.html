@@ -20,12 +20,15 @@
 
       <div id="algoControlSection">
         Node : <input type="text" id="numNodes" value="10" size="3">
+        Density : <input type="range" min="0" max="100" value="20" class="slider" id="density">
         Speed : <input type="range" min="0" max="990" value="500" class="slider" id="speed">
         <input type="button" value="New" onclick="newGraph()">
         <input type="button" value="Run" id="run" onclick="run()">
         <input type="button" value="Backward" onclick="backward()">
         <input type="button" value="Forward" onclick="forward()">
         <input type="button" value="Reload" onclick="reload()">
+        <input type="button" value="Simulation" onclick="simulation()">
+        Simulation : <input type="range" min="1" max="1000" value="100" class="slider" id="simulator">
       </div>
 
 
@@ -40,11 +43,11 @@
       <div id="info">
         <table>
           <tr>
-            <td><textarea id="canvas1s" cols="40" rows="10"></textarea></td>
-            <td><textarea id="canvas2s" cols="40" rows="10"></textarea></td>
-            <td><textarea id="canvas3s" cols="40" rows="10"></textarea></td>
-            <td><textarea id="canvas4s" cols="40" rows="10"></textarea></td>
-            <td><textarea id="canvas5s" cols="40" rows="10"></textarea></td>
+            <td><textarea id="canvas1s" cols="40" rows="8"></textarea></td>
+            <td><textarea id="canvas2s" cols="40" rows="8"></textarea></td>
+            <td><textarea id="canvas3s" cols="40" rows="8"></textarea></td>
+            <td><textarea id="canvas4s" cols="40" rows="8"></textarea></td>
+            <td><textarea id="canvas5s" cols="40" rows="8"></textarea></td>
           </tr>
           <tr>
             <td><textarea id="canvas1g" cols="40" rows="10"></textarea></td>
@@ -53,24 +56,31 @@
             <td><textarea id="canvas4g" cols="40" rows="10"></textarea></td>
             <td><textarea id="canvas5g" cols="40" rows="10"></textarea></td>
           </tr>
+          <tr>
+            <td><textarea id="canvas1x" cols="40" rows="3"></textarea></td>
+            <td><textarea id="canvas2x" cols="40" rows="3"></textarea></td>
+            <td><textarea id="canvas3x" cols="40" rows="3"></textarea></td>
+            <td><textarea id="canvas4x" cols="40" rows="3"></textarea></td>
+            <td><textarea id="canvas5x" cols="40" rows="3"></textarea></td>
+          </tr>
         </table>
       </div>
 
-  </div>
-  <footer>
-    <div id="footer">
-      <p>CS5800 - Final Project : Forest, Peter, Norman and Teresa @ Vancouver Campus with <svg
-          viewBox="0 0 1792 1792" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"
-          style="height: 0.8rem;">
-          <path
-            d="M896 1664q-26 0-44-18l-624-602q-10-8-27.5-26T145 952.5 77 855 23.5 734 0 596q0-220 127-344t351-124q62 0 126.5 21.5t120 58T820 276t76 68q36-36 76-68t95.5-68.5 120-58T1314 128q224 0 351 124t127 344q0 221-229 450l-623 600q-18 18-44 18z"
-            fill="#e25555"></path>
-        </svg>
-      </p>
-      <p>Disclaimer : Due to unforeseenable "feature", the backward button may not work</p>
     </div>
-  </footer>
-</div>
+    <footer>
+      <div id="footer">
+        <p>CS5800 - Final Project : Forest, Peter, Norman and Teresa @ Vancouver Campus with <svg
+            viewBox="0 0 1792 1792" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"
+            style="height: 0.8rem;">
+            <path
+              d="M896 1664q-26 0-44-18l-624-602q-10-8-27.5-26T145 952.5 77 855 23.5 734 0 596q0-220 127-344t351-124q62 0 126.5 21.5t120 58T820 276t76 68q36-36 76-68t95.5-68.5 120-58T1314 128q224 0 351 124t127 344q0 221-229 450l-623 600q-18 18-44 18z"
+              fill="#e25555"></path>
+          </svg>
+        </p>
+        <p>Disclaimer : Due to unforeseenable "feature", the backward button may not work</p>
+      </div>
+    </footer>
+  </div>
 </body>
 
 <script>
@@ -82,13 +92,14 @@
   let canvasList = [];
 
   class KargerCanvas {
+
     constructor(id, height, width) {
       this.id = id;
       this.height = height;
       this.width = width;
 
       this.stack = [];
-      this.cutCount = 0;
+      this.mergeCount = 0;
       this.contractCount = 0;
       this.removeSelfCount = 0;
       this.isComplete = false;
@@ -96,6 +107,7 @@
 
       this.nodes = [];
       this.edges = [];
+      // this.temp = [1,2]
 
       this.fill = d3.scale.category10();
       this.force = d3.layout.force()
@@ -174,7 +186,7 @@
     }
 
     // Karger Algorithm Start here
-    forward() {
+    forward(callback) {
 
       if (this.nodes.length == 2) {
         console.log(`Canvas ${this.id} : No more nodes can be cut`);
@@ -190,11 +202,14 @@
       this.updateGraph();
 
       // Updte Statistic
-      this.cutCount++;
+      this.mergeCount++;
+      this.edgeCount = this.edges.length;
+      this.nodeCount = this.nodes.length;
 
       // Terminte the case if there are only two nodes left
       if (this.nodes.length <= 2) {
         this.isComplete = true;
+        if (callback) callback();
         return;
       }
 
@@ -202,7 +217,7 @@
       if (this.isAuto) {
         let timeout = MAXIMUM_TIME - document.getElementById("speed").value;
         console.log(`Next iteration in ${timeout}ms`);
-        this.timeout = setTimeout(this.forward.bind(this), timeout);
+        this.timeout = setTimeout(this.forward.bind(this, callback), timeout);
       }
     }
 
@@ -227,7 +242,7 @@
 
       // Restore Statistic Information
       this.isComplete = false;
-      this.cutCount--;
+      this.mergeCount--;
       this.contractCount = instance.contractCount;
       this.removeSelfCount = instance.removeSelfCount;
       this.edgeCount = instance.edgeCount;
@@ -251,10 +266,10 @@
       this.updateGraph();
     }
 
-    setIsAuto(isAuto) {
+    setIsAuto(isAuto, callback) {
       this.isAuto = isAuto;
       if (isAuto) {
-        this.forward();
+        this.forward(callback);
       }
       else {
         clearTimeout(this.timeout);
@@ -277,7 +292,7 @@
       this.flattenGraph(graph);
 
       // Return the Graph with Statistic
-      let instance = { graph, contractCount: this.contractCount, removeSelfCount: this.removeSelfCount, edgeCount: this.edges.length, nodeCount: this.nodes.length };
+      let instance = { graph, contractCount: this.contractCount, removeSelfCount: this.removeSelfCount, edgeCount: this.edgeCount, nodeCount: this.nodeCount };
       return instance;
     }
 
@@ -309,15 +324,16 @@
       console.log(`After  : ${JSON.stringify(graph)}`);
     }
 
-    reload() {
+    reload(callback) {
       this.edges.length = 0;
       this.nodes.length = 0;
       this.stack.length = 0;
       this.removeSelfCount = 0;
       this.contractCount = 0;
-      this.cutCount = 0;
+      this.mergeCount = 0;
       this.isAuto = false;
       this.isComplete = false;
+      // this.temp = [1,2]
 
       let _self = this;
       d3.json(this.filename, function (error, data) {
@@ -332,8 +348,15 @@
           }
         }
 
+        _self.edgeCount = _self.edges.length;
+        _self.nodeCount = _self.nodes.length;
+
         // Update the Graph
         _self.updateGraph();
+
+        if (callback) {
+          callback();
+        }
       })
     }
 
@@ -343,6 +366,7 @@
     performKarger() {
       // Randomly choose an edge
       var edge_index = Math.floor(this.random() * this.edges.length);
+      // var edge_index = this.temp.shift();
       var edge = this.edges[edge_index];
 
       // Mash nodes together, all edges connected to second node are now connected to first
@@ -401,23 +425,23 @@
       let textarea1 = document.querySelector(`${this.id}s`);
       let isAuto = this.isAuto;
       let isComplete = this.isComplete;
-      let edgeCount = this.edges.length;
-      let cutCount = this.cutCount;
-      let nodeCount = this.nodes.length;
-      let totalEdge = (this.stack.length != 0) ? JSON.parse(this.stack[0]).edgeCount : edgeCount;
-      let totalNode = (this.stack.length != 0) ? JSON.parse(this.stack[0]).nodeCount : nodeCount;
+      let nodeCount = this.nodeCount;
+      let edgeCount = this.edgeCount;
+      let mergeCount = this.mergeCount;
+      let totalEdge = (this.stack.length != 0) ? JSON.parse(this.stack[0]).edgeCount : this.edgeCount;
+      let totalNode = (this.stack.length != 0) ? JSON.parse(this.stack[0]).nodeCount : this.nodeCount;
       let removeSelfCount = this.removeSelfCount;
       let contractCount = this.contractCount;
 
 
-      let buffer = `
-        Edge Count : ${edgeCount} / ${totalEdge}
-        Node Count : ${nodeCount} / ${totalNode}
-        Cut Count : ${cutCount}
-        Remove Self Edge : ${removeSelfCount}
-        Edge Modified : ${contractCount}
-        Is Auto : ${isAuto}
-        Is Complete : ${isComplete}
+      let buffer = `Edge Count : ${edgeCount} / ${totalEdge}
+Node Count : ${nodeCount} / ${totalNode}
+Merge Count : ${mergeCount}
+Remove Self Edge : ${removeSelfCount}
+Edge Modified : ${contractCount}
+Is Auto : ${isAuto}
+Is Complete : ${isComplete}
+Cut Count --> ${edgeCount}
       `;
 
       let graphBuffer = '';
@@ -433,7 +457,7 @@
         graph.push([labels].concat(edges.sort(intSorter)));
       }
 
-      for (let i=0; i < graph.length; i++){
+      for (let i = 0; i < graph.length; i++) {
         let tmp = graph[i];
         let head = tmp.shift();
         let edges = tmp;
@@ -448,8 +472,37 @@
     random() {
       if (DEBUG) return 0.5;
       else return Math.random()
+      // return Math.random()
     }
 
+    simulate() {
+
+      let globalMinCut = Number.MAX_SAFE_INTEGER;
+      let globalMaxCut = -1;
+      let count = 1;
+      let target = document.getElementById("simulator").value;
+      let textarea = document.querySelector(`${this.id}x`);
+      textarea.innerHTML = `Simulation in progress ${count}/${target} ...`;
+      let _self = this;
+      function simulateMe () {
+        _self.reload(() => {
+          _self.setIsAuto(true, () => {
+            count++
+            globalMinCut = Math.min(globalMinCut, _self.edgeCount);
+            globalMaxCut = Math.max(globalMaxCut, _self.edgeCount);
+            textarea.innerHTML = `Simulation Round ${count}/${target}\n`;
+            textarea.innerHTML += `Min Cut : ${_self.edgeCount} / ${globalMinCut}\n`;
+            textarea.innerHTML += `Max Cut : ${_self.edgeCount} / ${globalMaxCut}`;
+            if (count < target) {
+              setTimeout(simulateMe, 500);
+            } else {
+              console.log(`Simulation completed`);
+            }
+          });
+        });
+      }
+      simulateMe();
+    }
   }
 
   async function initialize() {
@@ -475,7 +528,8 @@
     setIsAuto(false);
 
     let numNodes = document.getElementById("numNodes").value;
-    const response = await fetch(`/generate/?isLive=N&isRaw=N&node=${numNodes}`);
+    let density = document.getElementById("density").value;
+    const response = await fetch(`/generate/?isLive=N&isRaw=N&node=${numNodes}&density=${density}`);
     const json = await response.json();
     const filename = (DEBUG) ? DEBUG_FILE : json.filename;
 
@@ -531,6 +585,13 @@
   let reload = () => {
     for (let i = 0; i < canvasList.length; i++) {
       canvasList[i].reload();
+    }
+  }
+
+  let simulation = () => {
+    document.getElementById("run").value = "Pause";
+    for (let i = 0; i < canvasList.length; i++) {
+      canvasList[i].simulate();
     }
   }
 
