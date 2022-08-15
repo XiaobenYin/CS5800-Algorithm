@@ -35,7 +35,7 @@
 						/>
 						<input type="button" value="New" onclick="newGraph()" />
 						<input type="button" value="Run" id="run" onclick="run()" />
-						<input type="button" value="Backward" onclick="backward()" />
+						<!-- <input type="button" value="Backward" onclick="backward()" /> -->
 						<input type="button" value="Forward" onclick="forward()" />
 						<input type="button" value="Reload" onclick="reload()" />
 						<input type="button" value="Simulation" onclick="simulation()" />
@@ -43,7 +43,7 @@
 						<input
 							type="range"
 							min="1"
-							max="1000"
+							max="300"
 							value="100"
 							class="slider"
 							id="simulator"
@@ -101,10 +101,10 @@
 								></path>
 							</svg>
 						</p>
-						<p>
+						<!-- <p>
 							Disclaimer : Due to unforeseenable "feature", the backward button
 							may not work
-						</p>
+						</p> -->
 					</div>
 				</footer>
 			</div>
@@ -144,7 +144,7 @@
 						.links(this.edges)
 						.linkDistance(300)
 						.charge(0)
-						.gravity(0.5)
+						.gravity(1.0)
 						.friction(0.7)
 						.on("tick", this.tick.bind(this));
 
@@ -567,7 +567,8 @@ Cut Count --> ${edgeCount}
 								globalMinCut = Math.min(globalMinCut, _self.edgeCount);
 								globalMaxCut = Math.max(globalMaxCut, _self.edgeCount);
 								textarea.innerHTML = `Simulation Round ${count}/${target}\n`;
-								textarea.innerHTML += `Min Cut : ${_self.edgeCount} / ${globalMinCut}\n`;
+								textarea.innerHTML += `Current min Cut : ${_self.edgeCount}\n`;
+								textarea.innerHTML += `Absolute min Cut : ${globalMinCut}\n`;
 								// textarea.innerHTML += `Max Cut : ${_self.edgeCount} / ${globalMaxCut}`;
 								if (count < target) {
 									setTimeout(simulateMe, 500);
