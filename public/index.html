@@ -52,34 +52,34 @@
 
 					<div class="row">
 						<div class="column" id="canvas1"></div>
-						<!-- <div class="column" id="canvas2"></div>
+						<div class="column" id="canvas2"></div>
 						<div class="column" id="canvas3"></div>
 						<div class="column" id="canvas4"></div>
-						<div class="column" id="canvas5"></div> -->
+						<div class="column" id="canvas5"></div>
 					</div>
 
 					<div id="info">
 						<table>
 							<tr>
 								<td><textarea id="canvas1s" cols="40" rows="8"></textarea></td>
-								<!-- <td><textarea id="canvas2s" cols="40" rows="8"></textarea></td>
+								<td><textarea id="canvas2s" cols="40" rows="8"></textarea></td>
 								<td><textarea id="canvas3s" cols="40" rows="8"></textarea></td>
 								<td><textarea id="canvas4s" cols="40" rows="8"></textarea></td>
-								<td><textarea id="canvas5s" cols="40" rows="8"></textarea></td> -->
+								<td><textarea id="canvas5s" cols="40" rows="8"></textarea></td>
 							</tr>
-							<!-- <tr>
+							<tr>
 								<td><textarea id="canvas1g" cols="40" rows="10"></textarea></td>
 								<td><textarea id="canvas2g" cols="40" rows="10"></textarea></td>
 								<td><textarea id="canvas3g" cols="40" rows="10"></textarea></td>
 								<td><textarea id="canvas4g" cols="40" rows="10"></textarea></td>
 								<td><textarea id="canvas5g" cols="40" rows="10"></textarea></td>
-							</tr> -->
+							</tr>
 							<tr>
 								<td><textarea id="canvas1x" cols="40" rows="3"></textarea></td>
-								<!-- <td><textarea id="canvas2x" cols="40" rows="3"></textarea></td>
+								<td><textarea id="canvas2x" cols="40" rows="3"></textarea></td>
 								<td><textarea id="canvas3x" cols="40" rows="3"></textarea></td>
 								<td><textarea id="canvas4x" cols="40" rows="3"></textarea></td>
-								<td><textarea id="canvas5x" cols="40" rows="3"></textarea></td> -->
+								<td><textarea id="canvas5x" cols="40" rows="3"></textarea></td>
 							</tr>
 						</table>
 					</div>
@@ -113,7 +113,7 @@
 		<script>
 			const width = 600,
 				height = 400;
-			const CANVAS_LIMIT = 5;
+			const CANVAS_LIMIT = 1;
 			const MAXIMUM_TIME = 1000;
 			const DEBUG = false;
 			const DEBUG_FILE = "/maps/testing.json";
@@ -304,11 +304,11 @@
 
 					let data = instance.graph;
 					for (var a = 0; a < data.length; a++) {
-						this.nodes.push({ id: a + 1, labels: data[a][0] });
-						for (var b = 1; b < data[a].length; b++) {
-							if (+data[a][b] - 1 > a) {
+						this.nodes.push({ id: a, labels: data[a][0] });
+						for (var b = 0; b < data[a].length; b++) {
+							if (+data[a][b] > a) {
 								// Ensures that we only add each edge one time
-								this.edges.push({ source: a, target: +data[a][b] - 1 });
+								this.edges.push({ source: a, target: +data[a][b] });
 							}
 						}
 					}
@@ -400,11 +400,11 @@
 					d3.json(this.filename, function (error, data) {
 						// console.log(data)
 						for (var a = 0; a < data.length; a++) {
-							_self.nodes.push({ id: a + 1, labels: data[a][0] });
-							for (var b = 1; b < data[a].length; b++) {
-								if (+data[a][b] - 1 > a) {
+							_self.nodes.push({ id: a, labels: data[a][0] });
+							for (var b = 0; b < data[a].length; b++) {
+								if (+data[a][b] > a) {
 									// Ensures that we only add each edge one time
-									_self.edges.push({ source: a, target: +data[a][b] - 1 });
+									_self.edges.push({ source: a, target: +data[a][b] });
 								}
 							}
 						}
@@ -505,15 +505,15 @@
 					let removeSelfCount = this.removeSelfCount;
 					let contractCount = this.contractCount;
 
-					let buffer = `Edge Count : ${edgeCount} / ${totalEdge}
-Node Count : ${nodeCount} / ${totalNode}
-Merge Count : ${mergeCount}
-Remove Self Edge : ${removeSelfCount}
-Edge Modified : ${contractCount}
-Is Auto : ${isAuto}
-Is Complete : ${isComplete}
-Cut Count --> ${edgeCount}
-      `;
+					let buffer = `>>> Edge Count : ${edgeCount} / ${totalEdge}
+>>> Node Count : ${nodeCount} / ${totalNode}
+>>> Merge Count : ${mergeCount}
+>>> Remove Self Edge : ${removeSelfCount}
+>>> Is Auto : ${isAuto}
+>>> Is Complete : ${isComplete}
+`;
+					// >>> Edge Modified : ${contractCount}
+					// >>> Cut Count --> ${edgeCount}
 
 					let graphBuffer = "";
 					let textarea2 = document.querySelector(`${this.id}g`);
@@ -566,9 +566,9 @@ Cut Count --> ${edgeCount}
 								count++;
 								globalMinCut = Math.min(globalMinCut, _self.edgeCount);
 								globalMaxCut = Math.max(globalMaxCut, _self.edgeCount);
-								textarea.innerHTML = `Simulation Round ${count}/${target}\n`;
-								textarea.innerHTML += `Current min Cut : ${_self.edgeCount}\n`;
-								textarea.innerHTML += `Absolute min Cut : ${globalMinCut}\n`;
+								textarea.innerHTML = `>>> Simulation Round ${count}/${target}\n`;
+								textarea.innerHTML += `>>> Current min Cut : ${_self.edgeCount}\n`;
+								textarea.innerHTML += `>>> Absolute min Cut : ${globalMinCut}\n`;
 								// textarea.innerHTML += `Max Cut : ${_self.edgeCount} / ${globalMaxCut}`;
 								if (count < target) {
 									setTimeout(simulateMe, 500);
