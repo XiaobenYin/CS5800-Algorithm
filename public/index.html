@@ -62,24 +62,13 @@
 						<table>
 							<tr>
 								<td><textarea id="canvas1s" cols="40" rows="8"></textarea></td>
-								<td><textarea id="canvas2s" cols="40" rows="8"></textarea></td>
-								<td><textarea id="canvas3s" cols="40" rows="8"></textarea></td>
+								<!-- <td><textarea id="canvas2s" cols="40" rows="8"></textarea></td> -->
+								<!-- <td><textarea id="canvas3s" cols="40" rows="8"></textarea></td>
 								<td><textarea id="canvas4s" cols="40" rows="8"></textarea></td>
-								<td><textarea id="canvas5s" cols="40" rows="8"></textarea></td>
-							</tr>
-							<tr>
-								<td><textarea id="canvas1g" cols="40" rows="10"></textarea></td>
-								<td><textarea id="canvas2g" cols="40" rows="10"></textarea></td>
-								<td><textarea id="canvas3g" cols="40" rows="10"></textarea></td>
-								<td><textarea id="canvas4g" cols="40" rows="10"></textarea></td>
-								<td><textarea id="canvas5g" cols="40" rows="10"></textarea></td>
+								<td><textarea id="canvas5s" cols="40" rows="8"></textarea></td> -->
 							</tr>
 							<tr>
 								<td><textarea id="canvas1x" cols="40" rows="3"></textarea></td>
-								<td><textarea id="canvas2x" cols="40" rows="3"></textarea></td>
-								<td><textarea id="canvas3x" cols="40" rows="3"></textarea></td>
-								<td><textarea id="canvas4x" cols="40" rows="3"></textarea></td>
-								<td><textarea id="canvas5x" cols="40" rows="3"></textarea></td>
 							</tr>
 						</table>
 					</div>
@@ -144,8 +133,8 @@
 						.links(this.edges)
 						.linkDistance(300)
 						.charge(0)
-						.gravity(1.0)
-						.friction(0.7)
+						.gravity(0.3)
+						.friction(0.5)
 						.on("tick", this.tick.bind(this));
 
 					// .on("tick", this.Tick.bind(this) )
